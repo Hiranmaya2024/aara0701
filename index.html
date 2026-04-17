@@ -43,24 +43,36 @@ button {
 let products = [];
 let filtered = [];
 
-// 🔗 YOUR GOOGLE SHEET LINK
-const SHEET_URL = "https://opensheet.elk.sh/1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9/Sheet1";
+// ✅ YOUR GOOGLE SHEET (CORRECTED)
+const SHEET_URL = "https://opensheet.elk.sh/1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9/sheet1";
 
-// Fetch data
+// 🔥 FETCH DATA
 fetch(SHEET_URL)
 .then(res => res.json())
 .then(data => {
+
+  console.log("RAW DATA:", data);
+
   products = data.map(p => ({
-    name: p["Product Name"] || "",
-    rate: parseFloat(p["Sales Price"]) || 0,
-    pack: p["Unit"] || "",
-    company: p["Company"] || ""
-  }));
+    name: (p["Product Name"] || "").trim(),
+    rate: parseFloat(p["Sales Price"] || 0),
+    pack: (p["Unit"] || "").trim(),
+    company: (p["Company"] || "").trim()
+  }))
+  .filter(p => p.name !== "");
+
+  console.log("PROCESSED:", products);
+
   filtered = products;
   renderList();
+})
+.catch(err => {
+  document.getElementById("list").innerHTML = "❌ Failed to load products";
+  console.error(err);
 });
 
-// Render items
+
+// 🧾 RENDER LIST
 function renderList(){
   let html = "";
   filtered.forEach((p,i)=>{
@@ -76,17 +88,19 @@ function renderList(){
   document.getElementById("list").innerHTML = html;
 }
 
-// Search filter
+
+// 🔍 SEARCH
 function filterItems(){
   let s = document.getElementById("search").value.toLowerCase();
-  filtered = products.filter(p => 
+  filtered = products.filter(p =>
     p.name.toLowerCase().includes(s) ||
     p.company.toLowerCase().includes(s)
   );
   renderList();
 }
 
-// Total calculation
+
+// 💰 TOTAL CALCULATION
 function updateTotal(){
   let total = 0;
   filtered.forEach((p,i)=>{
@@ -96,7 +110,8 @@ function updateTotal(){
   document.getElementById("total").innerText = "Total: ₹" + total.toFixed(2);
 }
 
-// Send WhatsApp order
+
+// 📲 SEND WHATSAPP ORDER
 function sendOrder(){
 
   let shop = document.getElementById("shop").value;
