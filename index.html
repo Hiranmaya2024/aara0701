@@ -1,43 +1,131 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aaradhya Pharmaceuticals - Login</title>
-  <link rel="stylesheet" href="styles/styles.css">
-</head>
-<body>
-    <header>
-    <h1>Home</h1>
-    <a href="./index.html">Home</a>
-    </header>
-    <main class="login-container">
-          <div class="header-group">
-              <img src="images/logo.jpg" alt="Aaradhya Pharmaceuticals Logo">
-              <h2 style="text-align:center">Aaradhya Pharmaceuticals</h2>
-          </div>
-          <div class="login-group">
-           <form id="loginForm" class="login-form">
-            <h2 style="text-align:center">Login</h2>
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" placeholder="Enter your username">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="Enter your password">
-            <button type="submit">Login</button>
-            <a href="#" class="forgot-password">Forgot Password?</a>
-            <p id="errorMessage" class="text-danger text-center mt-3"></p>
-           </form>
-	  </div>
-     </main>
-       <footer>
-       <!--   <a href="#">Contact Us</a> | <a href="#">Privacy Policy | <a href="offers.html">Offers</a>-->
-	   <p>&copy; 2024 Aaradhya Pharmaceuticals. All rights reserved.</p>
-       </footer>
-  <script src="./scripts/auth.js"></script>
-  <script src="./scripts/config.js"></script>
-  <script src="./scripts/google-sheets-api.js"></script>
-  <script src="./scripts/pagination.js"></script>
-<script src="//code.tidio.co/p7dqxfbixvwkj9pjeaekl2axh4whmztl.js" async></script>
-</body>
-</html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aaradhya Order App</title><style>
+body {
+  font-family: Arial;
+  padding: 10px;
+  background: #f5f5f5;
+}
+h2 {
+  text-align: center;
+}
+input, button {
+  padding: 12px;
+  margin: 5px 0;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+.item {
+  background: white;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+}
+.total {
+  font-size: 18px;
+  font-weight: bold;
+  text-align: right;
+}
+button {
+  background: #28a745;
+  color: white;
+  font-size: 16px;
+}
+</style></head>
+<body><h2>Aaradhya Pharmaceuticals</h2><input type="text" id="shop" placeholder="Enter Shop Name" required>
+<input type="text" id="mobile" placeholder="Enter Mobile Number" required><input type="text" id="search" placeholder="Search Product..." onkeyup="filterItems()"><div id="list">Loading products...</div><div class="total" id="total">Total: ₹0</div><button onclick="sendOrder()">Place Order on WhatsApp</button>
 
+<script>
+
+let products = [];
+let filtered = [];
+
+// 🔗 YOUR GOOGLE SHEET LINK
+const SHEET_URL = "https://opensheet.elk.sh/1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9/Sheet1";
+
+// Fetch data
+fetch(SHEET_URL)
+.then(res => res.json())
+.then(data => {
+  products = data.map(p => ({
+    name: p["Product Name"] || "",
+    rate: parseFloat(p["Sales Price"]) || 0,
+    pack: p["Unit"] || "",
+    company: p["Company"] || ""
+  }));
+  filtered = products;
+  renderList();
+});
+
+// Render items
+function renderList(){
+  let html = "";
+  filtered.forEach((p,i)=>{
+    html += `
+    <div class="item">
+      <b>${p.name}</b><br>
+      <small>${p.company}</small><br>
+      Pack: ${p.pack}<br>
+      Rate: ₹${p.rate}<br>
+      Qty: <input type="number" id="qty${i}" min="0" onchange="updateTotal()">
+    </div>`;
+  });
+  document.getElementById("list").innerHTML = html;
+}
+
+// Search filter
+function filterItems(){
+  let s = document.getElementById("search").value.toLowerCase();
+  filtered = products.filter(p => 
+    p.name.toLowerCase().includes(s) ||
+    p.company.toLowerCase().includes(s)
+  );
+  renderList();
+}
+
+// Total calculation
+function updateTotal(){
+  let total = 0;
+  filtered.forEach((p,i)=>{
+    let qty = parseFloat(document.getElementById("qty"+i)?.value) || 0;
+    total += qty * p.rate;
+  });
+  document.getElementById("total").innerText = "Total: ₹" + total.toFixed(2);
+}
+
+// Send WhatsApp order
+function sendOrder(){
+
+  let shop = document.getElementById("shop").value;
+  let mobile = document.getElementById("mobile").value;
+
+  if(!shop || !mobile){
+    alert("Please enter Shop Name and Mobile Number");
+    return;
+  }
+
+  let message = `🧾 *Aaradhya Order*%0A`;
+  message += `Shop: ${shop}%0A`;
+  message += `Mobile: ${mobile}%0A%0A`;
+
+  let total = 0;
+
+  filtered.forEach((p,i)=>{
+    let qty = parseFloat(document.getElementById("qty"+i)?.value) || 0;
+    if(qty > 0){
+      let amt = qty * p.rate;
+      total += amt;
+      message += `• ${p.name} (${p.pack}) x ${qty} = ₹${amt}%0A`;
+    }
+  });
+
+  message += `%0A*Total: ₹${total.toFixed(2)}*`;
+
+  window.open("https://wa.me/919533762508?text=" + message);
+}
+
+</script></body>
+</html>
