@@ -3,14 +3,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aaradhya Order App</title><style>
-body {
-  font-family: Arial;
-  padding: 10px;
-  background: #f5f5f5;
-}
-h2 {
-  text-align: center;
-}
+body { font-family: Arial; padding: 10px; background: #f5f5f5; }
+h2 { text-align: center; }
 input, button {
   padding: 12px;
   margin: 5px 0;
@@ -43,25 +37,25 @@ button {
 let products = [];
 let filtered = [];
 
-// ✅ YOUR GOOGLE SHEET (CORRECTED)
-const SHEET_URL = "https://opensheet.elk.sh/1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9/sheet1";
+// ✅ DIRECT CSV LINK (NO API ISSUES)
+const CSV_URL = "https://docs.google.com/spreadsheets/d/1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9/export?format=csv";
 
-// 🔥 FETCH DATA
-fetch(SHEET_URL)
-.then(res => res.json())
-.then(data => {
+// 🔥 FETCH CSV
+fetch(CSV_URL)
+.then(res => res.text())
+.then(csv => {
 
-  console.log("RAW DATA:", data);
+  const rows = csv.split("\n").map(r => r.split(","));
 
-  products = data.map(p => ({
-    name: (p["Product Name"] || "").trim(),
-    rate: parseFloat(p["Sales Price"] || 0),
-    pack: (p["Unit"] || "").trim(),
-    company: (p["Company"] || "").trim()
+  const headers = rows[0];
+
+  products = rows.slice(1).map(r => ({
+    name: (r[0] || "").trim(),
+    pack: (r[1] || "").trim(),
+    rate: parseFloat(r[4]) || 0,
+    company: (r[5] || "").trim()
   }))
   .filter(p => p.name !== "");
-
-  console.log("PROCESSED:", products);
 
   filtered = products;
   renderList();
@@ -72,7 +66,7 @@ fetch(SHEET_URL)
 });
 
 
-// 🧾 RENDER LIST
+// 🧾 DISPLAY
 function renderList(){
   let html = "";
   filtered.forEach((p,i)=>{
@@ -100,7 +94,7 @@ function filterItems(){
 }
 
 
-// 💰 TOTAL CALCULATION
+// 💰 TOTAL
 function updateTotal(){
   let total = 0;
   filtered.forEach((p,i)=>{
@@ -111,14 +105,14 @@ function updateTotal(){
 }
 
 
-// 📲 SEND WHATSAPP ORDER
+// 📲 WHATSAPP ORDER
 function sendOrder(){
 
   let shop = document.getElementById("shop").value;
   let mobile = document.getElementById("mobile").value;
 
   if(!shop || !mobile){
-    alert("Please enter Shop Name and Mobile Number");
+    alert("Enter Shop Name & Mobile");
     return;
   }
 
