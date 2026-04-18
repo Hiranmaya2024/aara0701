@@ -98,8 +98,12 @@ let products = [];
 let filtered = [];
 let cart = {};
 
+let visibleCount = 10;
+const loadStep = 10;
+
 const CSV_URL = "https://docs.google.com/spreadsheets/d/1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9/export?format=csv";
 
+// Load data
 fetch(CSV_URL)
 .then(res => res.text())
 .then(csv => {
@@ -147,15 +151,19 @@ function filterItems(){
     (company === "" || p.company === company)
   );
 
+  visibleCount = 10;
   renderList();
 }
 
 
 // Render
 function renderList(){
+
+  let itemsToShow = filtered.slice(0, visibleCount);
+
   let html = "";
 
-  filtered.forEach(p=>{
+  itemsToShow.forEach(p=>{
     let qty = cart[p.id] || 0;
 
     html += `
@@ -178,6 +186,22 @@ function renderList(){
 }
 
 
+// Infinite scroll
+window.addEventListener("scroll", () => {
+  if((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200){
+    loadMore();
+  }
+});
+
+
+function loadMore(){
+  if(visibleCount < filtered.length){
+    visibleCount += loadStep;
+    renderList();
+  }
+}
+
+
 // Update qty
 function updateQty(id, change){
   cart[id] = (cart[id] || 0) + change;
@@ -188,7 +212,7 @@ function updateQty(id, change){
 }
 
 
-// Update cart bar
+// Cart summary
 function updateCart(){
   let total = 0;
   let items = 0;
@@ -216,7 +240,9 @@ function sendOrder(){
     return;
   }
 
-  let message = `🧾 *Order*%0A${shop}%0A${mobile}%0A%0A`;
+  let message = `🧾 *Aaradhya Order*%0A`;
+  message += `Shop: ${shop}%0A`;
+  message += `Mobile: ${mobile}%0A%0A`;
 
   let total = 0;
 
@@ -225,11 +251,11 @@ function sendOrder(){
       let p = products[id];
       let amt = cart[id] * p.rate;
       total += amt;
-      message += `• ${p.name} x ${cart[id]} = ₹${amt}%0A`;
+      message += `• ${p.name} (${p.pack}) x ${cart[id]} = ₹${amt} (MRP ₹${p.mrp})%0A`;
     }
   }
 
-  message += `%0ATotal ₹${total}`;
+  message += `%0A*Total: ₹${total}*`;
 
   window.open("https://wa.me/919533762508?text=" + message);
 }
