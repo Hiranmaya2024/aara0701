@@ -3,21 +3,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aaradhya Order App</title><style>
-body {
-  font-family: Arial;
-  margin: 0;
+body { font-family: Arial; margin: 0; background: #f5f5f5; }
+
+/* Header */
+.header {
+  position: sticky;
+  top: 0;
+  background: white;
   padding: 10px;
-  background: #f5f5f5;
-}
-h2 {
-  text-align: center;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-/* Inputs */
-input, select, button {
+input, select {
+  width: 100%;
   padding: 10px;
   margin: 5px 0;
-  width: 100%;
   border-radius: 8px;
   border: 1px solid #ccc;
 }
@@ -25,70 +26,78 @@ input, select, button {
 /* Product Card */
 .item {
   background: white;
+  margin: 10px;
   padding: 12px;
-  margin-bottom: 10px;
   border-radius: 12px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-/* Grid for desktop */
-@media (min-width: 768px) {
-  #list {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-}
+.mrp { color: #888; font-size: 13px; }
 
-/* Large screen */
-@media (min-width: 1024px) {
-  #list {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.mrp {
-  color: #888;
-  font-size: 13px;
-}
-
-.total {
-  font-size: 18px;
-  font-weight: bold;
-  text-align: right;
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-top: 10px;
 }
 
-button {
-  background: #28a745;
-  color: white;
+.controls button {
+  padding: 6px 12px;
   font-size: 16px;
 }
 
-/* Pagination */
-.pagination {
+.qty {
+  font-weight: bold;
+}
+
+/* Grid */
+@media (min-width:768px){
+  #list {
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+  }
+}
+@media (min-width:1024px){
+  #list {
+    grid-template-columns: repeat(3,1fr);
+  }
+}
+
+/* Cart Bar */
+.cart-bar {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #28a745;
+  color: white;
+  padding: 12px;
   display: flex;
   justify-content: space-between;
-  margin-top: 10px;
+  align-items: center;
+}
+
+.cart-bar button {
+  background: white;
+  color: #28a745;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
 }
 </style></head>
-<body><h2>Aaradhya Pharmaceuticals</h2><input type="text" id="shop" placeholder="Shop Name">
-<input type="text" id="mobile" placeholder="Mobile Number"><input type="text" id="search" placeholder="Search Product..." onkeyup="filterItems()"><select id="companyFilter" onchange="filterItems()">
-  <option value="">All Companies</option>
-</select><div id="list">Loading...</div><div class="pagination">
-  <button onclick="prevPage()">⬅ Prev</button>
-  <button onclick="nextPage()">Next ➡</button>
-</div><div class="total" id="total">Total: ₹0</div><button onclick="sendOrder()">Place Order</button>
-
-<script>
+<body><div class="header">
+  <h3>Aaradhya Pharmaceuticals</h3>  <input type="text" id="shop" placeholder="Shop Name">
+  <input type="text" id="mobile" placeholder="Mobile Number">  <input type="text" id="search" placeholder="Search..." onkeyup="filterItems()">  <select id="companyFilter" onchange="filterItems()">
+    <option value="">All Companies</option>
+  </select>
+</div><div id="list">Loading...</div><div class="cart-bar">
+  <div id="cartInfo">0 items | ₹0</div>
+  <button onclick="sendOrder()">Checkout</button>
+</div><script>
 
 let products = [];
 let filtered = [];
+let cart = {};
 
-let currentPage = 1;
-const itemsPerPage = 10;
-
-// CSV
 const CSV_URL = "https://docs.google.com/spreadsheets/d/1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9/export?format=csv";
 
 fetch(CSV_URL)
@@ -97,7 +106,8 @@ fetch(CSV_URL)
 
   const rows = csv.split("\n").map(r => r.split(","));
 
-  products = rows.slice(1).map(r => ({
+  products = rows.slice(1).map((r,i) => ({
+    id: i,
     name: (r[0] || "").trim(),
     pack: (r[1] || "").trim(),
     mrp: parseFloat(r[3]) || 0,
@@ -113,7 +123,7 @@ fetch(CSV_URL)
 });
 
 
-// Company dropdown
+// Company filter
 function populateCompanyFilter(){
   let companies = [...new Set(products.map(p => p.company))];
   let select = document.getElementById("companyFilter");
@@ -137,28 +147,30 @@ function filterItems(){
     (company === "" || p.company === company)
   );
 
-  currentPage = 1;
   renderList();
 }
 
 
 // Render
 function renderList(){
-
-  let start = (currentPage - 1) * itemsPerPage;
-  let pageItems = filtered.slice(start, start + itemsPerPage);
-
   let html = "";
 
-  pageItems.forEach((p,i)=>{
+  filtered.forEach(p=>{
+    let qty = cart[p.id] || 0;
+
     html += `
     <div class="item">
       <b>${p.name}</b><br>
       <small>${p.company}</small><br>
       Pack: ${p.pack}<br>
-      <span class="mrp">MRP: ₹${p.mrp}</span><br>
-      Rate: ₹${p.rate}<br>
-      Qty: <input type="number" id="qty${start+i}" min="0" onchange="updateTotal()">
+      <span class="mrp">MRP ₹${p.mrp}</span><br>
+      Rate ₹${p.rate}
+
+      <div class="controls">
+        <button onclick="updateQty(${p.id}, -1)">-</button>
+        <span class="qty">${qty}</span>
+        <button onclick="updateQty(${p.id}, 1)">+</button>
+      </div>
     </div>`;
   });
 
@@ -166,32 +178,30 @@ function renderList(){
 }
 
 
-// Pagination
-function nextPage(){
-  if(currentPage * itemsPerPage < filtered.length){
-    currentPage++;
-    renderList();
-  }
-}
+// Update qty
+function updateQty(id, change){
+  cart[id] = (cart[id] || 0) + change;
+  if(cart[id] < 0) cart[id] = 0;
 
-function prevPage(){
-  if(currentPage > 1){
-    currentPage--;
-    renderList();
-  }
+  updateCart();
+  renderList();
 }
 
 
-// Total
-function updateTotal(){
+// Update cart bar
+function updateCart(){
   let total = 0;
+  let items = 0;
 
-  products.forEach((p,i)=>{
-    let qty = parseFloat(document.getElementById("qty"+i)?.value) || 0;
-    total += qty * p.rate;
-  });
+  for(let id in cart){
+    if(cart[id] > 0){
+      let p = products[id];
+      total += cart[id] * p.rate;
+      items += cart[id];
+    }
+  }
 
-  document.getElementById("total").innerText = "Total: ₹" + total.toFixed(2);
+  document.getElementById("cartInfo").innerText = `${items} items | ₹${total}`;
 }
 
 
@@ -201,20 +211,25 @@ function sendOrder(){
   let shop = document.getElementById("shop").value;
   let mobile = document.getElementById("mobile").value;
 
-  let message = `🧾 *Order*%0AShop: ${shop}%0AMobile: ${mobile}%0A%0A`;
+  if(!shop || !mobile){
+    alert("Enter Shop Name & Mobile");
+    return;
+  }
+
+  let message = `🧾 *Order*%0A${shop}%0A${mobile}%0A%0A`;
 
   let total = 0;
 
-  products.forEach((p,i)=>{
-    let qty = parseFloat(document.getElementById("qty"+i)?.value) || 0;
-    if(qty > 0){
-      let amt = qty * p.rate;
+  for(let id in cart){
+    if(cart[id] > 0){
+      let p = products[id];
+      let amt = cart[id] * p.rate;
       total += amt;
-      message += `• ${p.name} x ${qty} = ₹${amt}%0A`;
+      message += `• ${p.name} x ${cart[id]} = ₹${amt}%0A`;
     }
-  });
+  }
 
-  message += `%0ATotal: ₹${total.toFixed(2)}`;
+  message += `%0ATotal ₹${total}`;
 
   window.open("https://wa.me/919533762508?text=" + message);
 }
