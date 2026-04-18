@@ -28,6 +28,10 @@ button {
   color: white;
   font-size: 16px;
 }
+.mrp {
+  color: #888;
+  font-size: 13px;
+}
 </style></head>
 <body><h2>Aaradhya Pharmaceuticals</h2><input type="text" id="shop" placeholder="Enter Shop Name" required>
 <input type="text" id="mobile" placeholder="Enter Mobile Number" required><input type="text" id="search" placeholder="Search Product..." onkeyup="filterItems()"><div id="list">Loading products...</div><div class="total" id="total">Total: ₹0</div><button onclick="sendOrder()">Place Order on WhatsApp</button>
@@ -37,21 +41,19 @@ button {
 let products = [];
 let filtered = [];
 
-// ✅ DIRECT CSV LINK (NO API ISSUES)
+// ✅ CSV LINK
 const CSV_URL = "https://docs.google.com/spreadsheets/d/1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9/export?format=csv";
 
-// 🔥 FETCH CSV
 fetch(CSV_URL)
 .then(res => res.text())
 .then(csv => {
 
   const rows = csv.split("\n").map(r => r.split(","));
 
-  const headers = rows[0];
-
   products = rows.slice(1).map(r => ({
     name: (r[0] || "").trim(),
     pack: (r[1] || "").trim(),
+    mrp: parseFloat(r[3]) || 0,
     rate: parseFloat(r[4]) || 0,
     company: (r[5] || "").trim()
   }))
@@ -59,10 +61,6 @@ fetch(CSV_URL)
 
   filtered = products;
   renderList();
-})
-.catch(err => {
-  document.getElementById("list").innerHTML = "❌ Failed to load products";
-  console.error(err);
 });
 
 
@@ -75,6 +73,7 @@ function renderList(){
       <b>${p.name}</b><br>
       <small>${p.company}</small><br>
       Pack: ${p.pack}<br>
+      <span class="mrp">MRP: ₹${p.mrp}</span><br>
       Rate: ₹${p.rate}<br>
       Qty: <input type="number" id="qty${i}" min="0" onchange="updateTotal()">
     </div>`;
@@ -105,7 +104,7 @@ function updateTotal(){
 }
 
 
-// 📲 WHATSAPP ORDER
+// 📲 WHATSAPP
 function sendOrder(){
 
   let shop = document.getElementById("shop").value;
@@ -127,7 +126,7 @@ function sendOrder(){
     if(qty > 0){
       let amt = qty * p.rate;
       total += amt;
-      message += `• ${p.name} (${p.pack}) x ${qty} = ₹${amt}%0A`;
+      message += `• ${p.name} (${p.pack}) x ${qty} = ₹${amt} (MRP ₹${p.mrp})%0A`;
     }
   });
 
