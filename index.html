@@ -3,45 +3,92 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aaradhya Order App</title><style>
-body { font-family: Arial; padding: 10px; background: #f5f5f5; }
-h2 { text-align: center; }
-input, button {
-  padding: 12px;
+body {
+  font-family: Arial;
+  margin: 0;
+  padding: 10px;
+  background: #f5f5f5;
+}
+h2 {
+  text-align: center;
+}
+
+/* Inputs */
+input, select, button {
+  padding: 10px;
   margin: 5px 0;
   width: 100%;
   border-radius: 8px;
   border: 1px solid #ccc;
 }
+
+/* Product Card */
 .item {
   background: white;
-  padding: 10px;
-  margin-bottom: 8px;
-  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
+
+/* Grid for desktop */
+@media (min-width: 768px) {
+  #list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+/* Large screen */
+@media (min-width: 1024px) {
+  #list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.mrp {
+  color: #888;
+  font-size: 13px;
+}
+
 .total {
   font-size: 18px;
   font-weight: bold;
   text-align: right;
+  margin-top: 10px;
 }
+
 button {
   background: #28a745;
   color: white;
   font-size: 16px;
 }
-.mrp {
-  color: #888;
-  font-size: 13px;
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
 }
 </style></head>
-<body><h2>Aaradhya Pharmaceuticals</h2><input type="text" id="shop" placeholder="Enter Shop Name" required>
-<input type="text" id="mobile" placeholder="Enter Mobile Number" required><input type="text" id="search" placeholder="Search Product..." onkeyup="filterItems()"><div id="list">Loading products...</div><div class="total" id="total">Total: ₹0</div><button onclick="sendOrder()">Place Order on WhatsApp</button>
+<body><h2>Aaradhya Pharmaceuticals</h2><input type="text" id="shop" placeholder="Shop Name">
+<input type="text" id="mobile" placeholder="Mobile Number"><input type="text" id="search" placeholder="Search Product..." onkeyup="filterItems()"><select id="companyFilter" onchange="filterItems()">
+  <option value="">All Companies</option>
+</select><div id="list">Loading...</div><div class="pagination">
+  <button onclick="prevPage()">⬅ Prev</button>
+  <button onclick="nextPage()">Next ➡</button>
+</div><div class="total" id="total">Total: ₹0</div><button onclick="sendOrder()">Place Order</button>
 
 <script>
 
 let products = [];
 let filtered = [];
 
-// ✅ CSV LINK
+let currentPage = 1;
+const itemsPerPage = 10;
+
+// CSV
 const CSV_URL = "https://docs.google.com/spreadsheets/d/1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9/export?format=csv";
 
 fetch(CSV_URL)
@@ -60,14 +107,50 @@ fetch(CSV_URL)
   .filter(p => p.name !== "");
 
   filtered = products;
+
+  populateCompanyFilter();
   renderList();
 });
 
 
-// 🧾 DISPLAY
+// Company dropdown
+function populateCompanyFilter(){
+  let companies = [...new Set(products.map(p => p.company))];
+  let select = document.getElementById("companyFilter");
+
+  companies.forEach(c=>{
+    let opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    select.appendChild(opt);
+  });
+}
+
+
+// Filter
+function filterItems(){
+  let s = document.getElementById("search").value.toLowerCase();
+  let company = document.getElementById("companyFilter").value;
+
+  filtered = products.filter(p =>
+    (p.name.toLowerCase().includes(s) || p.company.toLowerCase().includes(s)) &&
+    (company === "" || p.company === company)
+  );
+
+  currentPage = 1;
+  renderList();
+}
+
+
+// Render
 function renderList(){
+
+  let start = (currentPage - 1) * itemsPerPage;
+  let pageItems = filtered.slice(start, start + itemsPerPage);
+
   let html = "";
-  filtered.forEach((p,i)=>{
+
+  pageItems.forEach((p,i)=>{
     html += `
     <div class="item">
       <b>${p.name}</b><br>
@@ -75,62 +158,63 @@ function renderList(){
       Pack: ${p.pack}<br>
       <span class="mrp">MRP: ₹${p.mrp}</span><br>
       Rate: ₹${p.rate}<br>
-      Qty: <input type="number" id="qty${i}" min="0" onchange="updateTotal()">
+      Qty: <input type="number" id="qty${start+i}" min="0" onchange="updateTotal()">
     </div>`;
   });
+
   document.getElementById("list").innerHTML = html;
 }
 
 
-// 🔍 SEARCH
-function filterItems(){
-  let s = document.getElementById("search").value.toLowerCase();
-  filtered = products.filter(p =>
-    p.name.toLowerCase().includes(s) ||
-    p.company.toLowerCase().includes(s)
-  );
-  renderList();
+// Pagination
+function nextPage(){
+  if(currentPage * itemsPerPage < filtered.length){
+    currentPage++;
+    renderList();
+  }
+}
+
+function prevPage(){
+  if(currentPage > 1){
+    currentPage--;
+    renderList();
+  }
 }
 
 
-// 💰 TOTAL
+// Total
 function updateTotal(){
   let total = 0;
-  filtered.forEach((p,i)=>{
+
+  products.forEach((p,i)=>{
     let qty = parseFloat(document.getElementById("qty"+i)?.value) || 0;
     total += qty * p.rate;
   });
+
   document.getElementById("total").innerText = "Total: ₹" + total.toFixed(2);
 }
 
 
-// 📲 WHATSAPP
+// WhatsApp
 function sendOrder(){
 
   let shop = document.getElementById("shop").value;
   let mobile = document.getElementById("mobile").value;
 
-  if(!shop || !mobile){
-    alert("Enter Shop Name & Mobile");
-    return;
-  }
-
-  let message = `🧾 *Aaradhya Order*%0A`;
-  message += `Shop: ${shop}%0A`;
-  message += `Mobile: ${mobile}%0A%0A`;
+  let message = `🧾 *Order*%0AShop: ${shop}%0AMobile: ${mobile}%0A%0A`;
 
   let total = 0;
 
-  filtered.forEach((p,i)=>{
+  products.forEach((p,i)=>{
     let qty = parseFloat(document.getElementById("qty"+i)?.value) || 0;
     if(qty > 0){
       let amt = qty * p.rate;
       total += amt;
-      message += `• ${p.name} (${p.pack}) x ${qty} = ₹${amt} (MRP ₹${p.mrp})%0A`;
+      message += `• ${p.name} x ${qty} = ₹${amt}%0A`;
     }
   });
 
-  message += `%0A*Total: ₹${total.toFixed(2)}*`;
+  message += `%0ATotal: ₹${total.toFixed(2)}`;
 
   window.open("https://wa.me/919533762508?text=" + message);
 }
