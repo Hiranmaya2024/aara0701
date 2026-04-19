@@ -770,8 +770,7 @@ body {
 <div id="list">
   <div class="state-msg">
     <div class="spinner"></div>
-    <p id="loadingMsg">Connecting to sheet…</p>
-    <p style="font-size:11px;margin-top:6px;color:var(--muted)" id="loadingHint">Trying direct → proxy → fallback</p>
+    <p>Loading medicines…</p>
   </div>
 </div>
 <div id="load-more-trigger"></div>
@@ -861,125 +860,28 @@ let products = [], filtered = [], cart = {};
 let visibleCount = 12, selectedCompany = '';
 const loadStep = 12;
 
-const SHEET_ID  = '1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9';
-const CSV_DIRECT = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
-// CORS proxies tried in order
-const PROXIES = [
-  csv => `https://corsproxy.io/?url=${encodeURIComponent(csv)}`,
-  csv => `https://api.allorigins.win/raw?url=${encodeURIComponent(csv)}`,
-  csv => `https://cors-anywhere.herokuapp.com/${csv}`,
-];
+const SHEET_ID = '1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9';
+// gviz/tq endpoint: no CORS issues, always works for public sheets
+const GViz_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sheet1`;
 
-function parseCSV(csv) {
-  const rows = csv.trim().split('\n').map(row => {
-    const result = []; let cur = '', inQ = false;
-    for (const ch of row) {
-      if (ch === '"') inQ = !inQ;
-      else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
-      else cur += ch;
-    }
-    result.push(cur.trim());
-    return result;
+fetch(GViz_URL)
+  .then(res => res.text())
+  .then(csv => {
+    const rows = csv.split('\n').map(r => r.split(','));
+    products = rows.slice(1).map((r, i) => ({
+      id:      i,
+      name:    (r[0] || '').replace(/"/g, '').trim(),
+      pack:    (r[1] || '').replace(/"/g, '').trim(),
+      mrp:     parseFloat((r[3] || '').replace(/"/g, '')) || 0,
+      rate:    parseFloat((r[4] || '').replace(/"/g, '')) || 0,
+      company: (r[5] || '').replace(/"/g, '').trim()
+    })).filter(p => p.name !== '');
+    filtered = products;
+    buildCompanyChips(); renderList(true); updateResultsBar();
+  })
+  .catch(() => {
+    document.getElementById('list').innerHTML = `<div class="state-msg"><div class="icon">⚠️</div><p>Failed to load products.<br>Check your internet connection.</p></div>`;
   });
-  const data = rows.slice(1).map((r, i) => ({
-    id: i,
-    name:    (r[0] || '').trim(),
-    pack:    (r[1] || '').trim(),
-    mrp:     parseFloat(r[3]) || 0,
-    rate:    parseFloat(r[4]) || 0,
-    company: (r[5] || '').trim()
-  })).filter(p => p.name !== '');
-  return data;
-}
-
-function onDataLoaded(data) {
-  products = data;
-  filtered = products;
-  buildCompanyChips(); renderList(true); updateResultsBar();
-}
-
-function showFallbackUI(reason) {
-  document.getElementById('list').innerHTML = `
-    <div class="state-msg" style="padding:30px 16px" id="fallbackBox">
-      <div class="icon">📋</div>
-      <p style="font-weight:600;color:var(--text);margin-bottom:6px">Could not auto-load data</p>
-      <p style="font-size:12px;margin-bottom:14px;color:var(--muted)">${reason}</p>
-      <p style="font-size:12px;margin-bottom:8px;color:var(--text);font-weight:600">
-        Paste your CSV data below:
-      </p>
-      <textarea id="csvPaste" placeholder="Paste CSV rows here…" style="
-        width:100%;height:120px;border:1.5px solid var(--border);
-        border-radius:10px;padding:10px;font-size:12px;
-        background:var(--bg);color:var(--text);font-family:monospace;
-        resize:vertical;outline:none;"></textarea>
-      <button onclick="loadFromPaste()" style="
-        margin-top:10px;width:100%;padding:12px;
-        background:var(--btn-bg);color:var(--btn-text);
-        border:none;border-radius:10px;font-size:14px;
-        font-weight:600;cursor:pointer;font-family:var(--font-body)">
-        Load Data ↗
-      </button>
-      <p style="font-size:11px;margin-top:12px;color:var(--muted)">
-        Or open your sheet → File → Download → CSV,<br>then paste contents above.
-      </p>
-    </div>`;
-}
-
-function loadFromPaste() {
-  const raw = (document.getElementById('csvPaste') || {}).value || '';
-  if (!raw.trim()) { showToast('⚠️ Paste CSV data first'); return; }
-  try {
-    const data = parseCSV(raw);
-    if (!data.length) { showToast('⚠️ No valid rows found'); return; }
-    onDataLoaded(data);
-    showToast(`✅ Loaded ${data.length} products`);
-  } catch(e) {
-    showToast('⚠️ Could not parse CSV');
-  }
-}
-
-// Attempt direct fetch, then proxy chain
-async function loadData() {
-  const setMsg = (m, h='') => {
-    const el = document.getElementById('loadingMsg');
-    const hl = document.getElementById('loadingHint');
-    if (el) el.textContent = m;
-    if (hl) hl.textContent = h;
-  };
-
-  // 1. Try direct (works when sheet is public + CORS ok)
-  setMsg('Connecting to sheet…', 'Trying direct access…');
-  try {
-    const r = await fetch(CSV_DIRECT, { cache: 'no-store' });
-    if (r.ok) {
-      const text = await r.text();
-      if (text.includes('<html') || text.includes('<!DOCTYPE')) throw new Error('Got HTML, not CSV');
-      const data = parseCSV(text);
-      if (data.length) { onDataLoaded(data); return; }
-    }
-  } catch(_) {}
-
-  // 2. Try CORS proxies in sequence
-  const proxyNames = ['corsproxy.io', 'allorigins.win', 'cors-anywhere'];
-  for (let i = 0; i < PROXIES.length; i++) {
-    setMsg(`Trying proxy ${i+1} of ${PROXIES.length}…`, proxyNames[i]);
-    try {
-      const url = PROXIES[i](CSV_DIRECT);
-      const r = await fetch(url, { cache: 'no-store' });
-      if (r.ok) {
-        const text = await r.text();
-        if (text.includes('<html') || text.includes('<!DOCTYPE')) continue;
-        const data = parseCSV(text);
-        if (data.length) { onDataLoaded(data); return; }
-      }
-    } catch(_) { continue; }
-  }
-
-  // 3. All failed — show manual paste UI
-  showFallbackUI('The sheet may be private or CORS is blocked. Make sure the Google Sheet is shared as "Anyone with the link can view".');
-}
-
-loadData();
 
 // ── COMPANY CHIPS ──
 function buildCompanyChips() {
