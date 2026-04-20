@@ -1,224 +1,870 @@
-<!DOCTYPE html><html lang="en" data-theme="pharma">
+<!DOCTYPE html>
+<html lang="en" data-theme="pharma">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aaradhya Pharmaceuticals</title><style>
-body{margin:0;font-family:Arial;background:#f5f5f5;}
-.header{padding:12px;background:#0a3d6b;color:#fff;position:sticky;top:0;z-index:10}
-input,button,select{width:100%;padding:10px;margin:5px 0;border-radius:8px;border:1px solid #ccc}
-.item{background:#fff;margin:10px;padding:12px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
-.controls{display:flex;justify-content:space-between;margin-top:8px}
-.qty{font-weight:bold}
-.cart-bar{position:fixed;bottom:0;width:100%;background:#28a745;color:#fff;padding:12px;display:flex;justify-content:space-between}
-.theme-btn{margin-top:5px;background:#fff;color:#000;font-weight:bold}
-</style></head><body><div class="header">
-<h3 id="brandIcon">💊 Aaradhya Pharmaceuticals</h3><button class="theme-btn" onclick="openThemeSheet()">🎨 Change Theme</button>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Aaradhya Pharmaceuticals</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 
-<input id="shop" placeholder="Shop Name">
-<input id="mobile" placeholder="Mobile"><input id="search" placeholder="Search..." oninput="filterItems()"><select id="companyFilter" onchange="filterItems()">
-<option value="">All Companies</option>
-</select>
-</div><div id="list">Loading...</div>
-<div id="load-more-trigger"></div><div class="cart-bar" id="cartBar">
-<div id="cartInfo">0 items | ₹0</div>
-<button onclick="sendOrder()">Checkout</button>
-</div><!-- THEME PANEL --><div id="themeSheet" style="position:fixed;bottom:0;width:100%;background:#fff;padding:10px;display:none">
-<button onclick="applyTheme('pharma')">Pharma</button>
-<button onclick="applyTheme('darknight')">Dark</button>
-<button onclick="applyTheme('jungle')">Jungle</button>
-<button onclick="applyTheme('avengers')">Avengers</button>
-<button onclick="applyTheme('indian')">Indian</button>
-<button onclick="closeThemeSheet()">Close</button>
-</div><script>
+<style>
+/* ── CSS RESET & VARIABLES ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+:root {
+  --hdr-bg: #0a2e52;
+  --hdr-accent: #1a6bbd;
+  --hdr-text: #ffffff;
+  --accent: #1a6bbd;
+  --accent-light: #e8f2ff;
+  --add-btn: #1a6bbd;
+  --add-btn-text: #fff;
+  --cart-bg: #0a2e52;
+  --cart-text: #fff;
+  --checkout-bg: #22c55e;
+  --checkout-text: #fff;
+  --card-bg: #ffffff;
+  --card-shadow: 0 2px 12px rgba(10,46,82,0.09);
+  --body-bg: #f0f4f9;
+  --text-primary: #12243a;
+  --text-secondary: #5a7a99;
+  --border: #dae3ef;
+  --input-bg: rgba(255,255,255,0.13);
+  --input-border: rgba(255,255,255,0.25);
+  --radius: 14px;
+  --radius-sm: 9px;
+  --transition: 0.18s cubic-bezier(.4,0,.2,1);
+  --font-body: 'DM Sans', sans-serif;
+  --font-display: 'Playfair Display', serif;
+}
+
+[data-theme="darknight"] {
+  --hdr-bg: #0f0f1a;
+  --hdr-accent: #5c3ddb;
+  --accent: #7c5ce8;
+  --accent-light: #1a1435;
+  --add-btn: #7c5ce8;
+  --cart-bg: #1a0f3a;
+  --checkout-bg: #5c3ddb;
+  --card-bg: #181828;
+  --card-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  --body-bg: #0d0d1a;
+  --text-primary: #e8e0ff;
+  --text-secondary: #9b8ec4;
+  --border: #2d2550;
+  --input-bg: rgba(255,255,255,0.07);
+  --input-border: rgba(255,255,255,0.15);
+}
+
+[data-theme="jungle"] {
+  --hdr-bg: #1a3d1a;
+  --hdr-accent: #2e7d32;
+  --accent: #33a854;
+  --accent-light: #e8f5e9;
+  --add-btn: #33a854;
+  --cart-bg: #1a3d1a;
+  --checkout-bg: #f9a825;
+  --checkout-text: #1a3d1a;
+  --card-bg: #ffffff;
+  --body-bg: #f1f8f1;
+  --text-primary: #1a3d1a;
+  --text-secondary: #4a7a4a;
+  --border: #c8e6c9;
+}
+
+[data-theme="avengers"] {
+  --hdr-bg: #7b0000;
+  --hdr-accent: #c62828;
+  --accent: #e53935;
+  --accent-light: #fff3f3;
+  --add-btn: #e53935;
+  --cart-bg: #1a1a2e;
+  --checkout-bg: #ffd600;
+  --checkout-text: #1a1a2e;
+  --card-bg: #ffffff;
+  --body-bg: #f5f5f5;
+  --text-primary: #1a1a2e;
+  --text-secondary: #6a6a8e;
+  --border: #e0e0ee;
+}
+
+[data-theme="indian"] {
+  --hdr-bg: #ff6f00;
+  --hdr-accent: #e65100;
+  --accent: #f57c00;
+  --accent-light: #fff8e1;
+  --add-btn: #f57c00;
+  --cart-bg: #bf360c;
+  --checkout-bg: #388e3c;
+  --card-bg: #fffdf7;
+  --body-bg: #fff8e1;
+  --text-primary: #3e2723;
+  --text-secondary: #795548;
+  --border: #ffe0b2;
+}
+
+/* ── BASE ── */
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--body-bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  padding-bottom: 90px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--hdr-bg);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 3px 20px rgba(0,0,0,0.25);
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  gap: 10px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+}
+
+.brand-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--hdr-text);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.02em;
+}
+
+.theme-btn {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 8px;
+  padding: 7px 11px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: var(--transition);
+  backdrop-filter: blur(4px);
+}
+.theme-btn:hover { background: rgba(255,255,255,0.25); }
+.theme-btn:active { transform: scale(0.96); }
+
+.header-inputs {
+  padding: 0 16px 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.header-filters {
+  padding: 0 16px 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.header input,
+.header select {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 13px;
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  width: 100%;
+  outline: none;
+  transition: var(--transition);
+}
+.header input::placeholder { color: rgba(255,255,255,0.55); }
+.header input:focus,
+.header select:focus { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+
+.header select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.7)' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  cursor: pointer;
+}
+.header select option { background: #1a2a3a; color: #fff; }
+
+.search-wrapper {
+  position: relative;
+}
+.search-wrapper input {
+  padding-left: 36px;
+}
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+/* ── PRODUCT LIST ── */
+#list {
+  padding: 12px 12px 4px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 540px) {
+  #list { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 860px) {
+  #list { grid-template-columns: 1fr 1fr 1fr; padding: 16px; gap: 14px; }
+  .header-inputs { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .header-filters { grid-template-columns: 2fr 1fr; }
+}
+@media (min-width: 1100px) {
+  #list { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ── PRODUCT CARD ── */
+.item {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  padding: 15px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: cardIn 0.25s ease both;
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+.item:hover {
+  box-shadow: 0 6px 24px rgba(10,46,82,0.15);
+  transform: translateY(-1px);
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.item-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.item-company {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--accent-light);
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 30px;
+}
+
+.item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.meta-pill {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  background: var(--body-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-weight: 500;
+}
+
+.price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.rate-price {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.mrp-price {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+
+.spacer { flex: 1; }
+
+/* ── CART CONTROLS ── */
+.controls {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.btn-add {
+  width: 100%;
+  padding: 9px;
+  background: var(--add-btn);
+  color: var(--add-btn-text);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: var(--transition);
+}
+.btn-add:hover { filter: brightness(1.12); }
+.btn-add:active { transform: scale(0.97); }
+
+.qty-control {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 0;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.btn-qty {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  width: 40px;
+  height: 38px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+.btn-qty:hover { filter: brightness(1.15); }
+.btn-qty:active { transform: scale(0.93); }
+
+.qty-num {
+  flex: 1;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: transparent;
+  user-select: none;
+}
+
+/* ── LOADING / EMPTY STATE ── */
+.loading-state, .empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 14px;
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── CART BAR ── */
+.cart-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--cart-bg);
+  color: var(--cart-text);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.22);
+  z-index: 200;
+  min-height: 60px;
+}
+
+.cart-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.cart-count {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+.cart-total {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.btn-checkout {
+  background: var(--checkout-bg);
+  color: var(--checkout-text);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 11px 22px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-checkout:hover { filter: brightness(1.1); }
+.btn-checkout:active { transform: scale(0.96); }
+
+/* ── THEME SHEET ── */
+.theme-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 300;
+  display: none;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.theme-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--card-bg);
+  border-radius: 20px 20px 0 0;
+  padding: 24px 16px 32px;
+  z-index: 310;
+  display: none;
+  animation: slideUp 0.25s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.theme-sheet-handle {
+  width: 40px; height: 4px;
+  background: var(--border);
+  border-radius: 10px;
+  margin: 0 auto 18px;
+}
+
+.theme-sheet h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 400px) {
+  .theme-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.theme-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  background: var(--body-bg);
+  transition: var(--transition);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.theme-option:hover { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.theme-option.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.theme-option .t-icon { font-size: 1.6rem; }
+
+.btn-close-sheet {
+  width: 100%;
+  padding: 12px;
+  background: var(--body-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.btn-close-sheet:hover { background: var(--border); }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="header-top">
+    <div class="brand">
+      <span class="brand-icon" id="brandIcon">💊</span>
+      <span class="brand-name">Aaradhya Pharmaceuticals</span>
+    </div>
+    <button class="theme-btn" onclick="openThemeSheet()">🎨 Theme</button>
+  </div>
+
+  <div class="header-inputs">
+    <input id="shop" type="text" placeholder="🏪 Shop Name" autocomplete="off">
+    <input id="mobile" type="tel" placeholder="📱 Mobile No." autocomplete="off" inputmode="numeric">
+  </div>
+
+  <div class="header-filters">
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input id="search" placeholder="Search medicines…" oninput="filterItems()" autocomplete="off">
+    </div>
+    <select id="companyFilter" onchange="filterItems()">
+      <option value="">All Companies</option>
+    </select>
+  </div>
+</header>
+
+<!-- ── PRODUCT LIST ── -->
+<div id="list">
+  <div class="loading-state">
+    <div class="spinner"></div>
+    <span>Loading products…</span>
+  </div>
+</div>
+<div id="load-more-trigger"></div>
+
+<!-- ── CART BAR ── -->
+<div class="cart-bar" id="cartBar">
+  <div class="cart-info">
+    <span class="cart-count" id="cartCount">0 items</span>
+    <span class="cart-total" id="cartTotal">₹0.00</span>
+  </div>
+  <button class="btn-checkout" onclick="sendOrder()">
+    <span>🛒</span> Checkout via WhatsApp
+  </button>
+</div>
+
+<!-- ── THEME OVERLAY + SHEET ── -->
+<div class="theme-overlay" id="themeOverlay" onclick="closeThemeSheet()"></div>
+<div class="theme-sheet" id="themeSheet">
+  <div class="theme-sheet-handle"></div>
+  <h3>Choose a Theme</h3>
+  <div class="theme-grid">
+    <button class="theme-option" onclick="applyTheme('pharma')" id="t-pharma">
+      <span class="t-icon">💊</span> Pharma
+    </button>
+    <button class="theme-option" onclick="applyTheme('darknight')" id="t-darknight">
+      <span class="t-icon">🦇</span> Dark
+    </button>
+    <button class="theme-option" onclick="applyTheme('jungle')" id="t-jungle">
+      <span class="t-icon">🌿</span> Jungle
+    </button>
+    <button class="theme-option" onclick="applyTheme('avengers')" id="t-avengers">
+      <span class="t-icon">⚡</span> Avengers
+    </button>
+    <button class="theme-option" onclick="applyTheme('indian')" id="t-indian">
+      <span class="t-icon">🇮🇳</span> Indian
+    </button>
+  </div>
+  <button class="btn-close-sheet" onclick="closeThemeSheet()">✕ Close</button>
+</div>
+
+<script>
 // ── THEME SYSTEM ──
-const THEMES={
- pharma:{icon:'💊',name:'Pharma',search:'Search medicines…'},
- darknight:{icon:'🦇',name:'Dark',search:'Search…'},
- jungle:{icon:'🌿',name:'Jungle',search:'Search…'},
- avengers:{icon:'⚡',name:'Avengers',search:'Search…'},
- indian:{icon:'🇮🇳',name:'Indian',search:'Search…'}
+const THEMES = {
+  pharma:    { icon: '💊', name: 'Pharma',    search: 'Search medicines…'  },
+  darknight: { icon: '🦇', name: 'Dark Night', search: 'Search products…'  },
+  jungle:    { icon: '🌿', name: 'Jungle',     search: 'Search products…'  },
+  avengers:  { icon: '⚡', name: 'Avengers',   search: 'Search products…'  },
+  indian:    { icon: '🇮🇳', name: 'Indian',   search: 'Search products…'  }
 };
 
-let currentTheme=localStorage.getItem('aa_theme')||'pharma';
+let currentTheme = localStorage.getItem('aa_theme') || 'pharma';
 
-function applyTheme(t){
- currentTheme=t;
- localStorage.setItem('aa_theme',t);
- document.documentElement.setAttribute('data-theme',t);
+function applyTheme(t) {
+  currentTheme = t;
+  localStorage.setItem('aa_theme', t);
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('brandIcon').textContent = THEMES[t].icon;
+  document.getElementById('search').placeholder = THEMES[t].search;
 
- document.getElementById("brandIcon").innerText=THEMES[t].icon+" Aaradhya Pharmaceuticals";
- document.getElementById("search").placeholder=THEMES[t].search;
+  // Highlight active theme button
+  document.querySelectorAll('.theme-option').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.getElementById('t-' + t);
+  if (activeBtn) activeBtn.classList.add('active');
 
- closeThemeSheet();
+  closeThemeSheet();
 }
 
-function openThemeSheet(){
- document.getElementById("themeSheet").style.display="block";
+function openThemeSheet() {
+  document.getElementById('themeSheet').style.display = 'block';
+  document.getElementById('themeOverlay').style.display = 'block';
 }
-function closeThemeSheet(){
- document.getElementById("themeSheet").style.display="none";
+function closeThemeSheet() {
+  document.getElementById('themeSheet').style.display = 'none';
+  document.getElementById('themeOverlay').style.display = 'none';
 }
 
 applyTheme(currentTheme);
 
 
 // ── DATA ──
-let products=[],filtered=[],cart={};
-let visible=10,step=10;
+let products = [], filtered = [], cart = {};
+let visible = 12, step = 12;
 
-const CSV="https://docs.google.com/spreadsheets/d/1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9/export?format=csv";
+const CSV = "https://docs.google.com/spreadsheets/d/1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9/export?format=csv";
 
 // CSV PARSER
-function parseCSV(text){
- let rows=[],row=[],col="",q=false;
- for(let c of text){
-  if(c=='"') q=!q;
-  else if(c==','&&!q){row.push(col);col="";}
-  else if((c=='\n'||c=='\r')&&!q){if(col||row.length){row.push(col);rows.push(row);row=[];col="";}}
-  else col+=c;
- }
- if(col) row.push(col);
- if(row.length) rows.push(row);
- return rows;
+function parseCSV(text) {
+  let rows = [], row = [], col = "", q = false;
+  for (let c of text) {
+    if (c === '"') q = !q;
+    else if (c === ',' && !q) { row.push(col); col = ""; }
+    else if ((c === '\n' || c === '\r') && !q) {
+      if (col || row.length) { row.push(col); rows.push(row); row = []; col = ""; }
+    } else col += c;
+  }
+  if (col) row.push(col);
+  if (row.length) rows.push(row);
+  return rows;
 }
 
 // LOAD
 fetch(CSV)
-.then(r=>r.text())
-.then(txt=>{
- let rows=parseCSV(txt);
+  .then(r => r.text())
+  .then(txt => {
+    let rows = parseCSV(txt);
+    products = rows.slice(1).map((r, i) => ({
+      id: i,
+      name: (r[0] || "").trim(),
+      pack: (r[1] || "").trim(),
+      mrp:  parseFloat(r[3]) || 0,
+      rate: parseFloat(r[4]) || 0,
+      company: (r[5] || "").trim()
+    })).filter(p => p.name);
 
- products=rows.slice(1).map((r,i)=>({
-  id:i,
-  name:(r[0]||"").trim(),
-  pack:(r[1]||"").trim(),
-  mrp:parseFloat(r[3])||0,
-  rate:parseFloat(r[4])||0,
-  company:(r[5]||"").trim()
- })).filter(p=>p.name);
+    filtered = products;
+    buildCompany();
+    render(true);
+  })
+  .catch(() => {
+    document.getElementById('list').innerHTML = `
+      <div class="empty-state">
+        <div style="font-size:2.5rem">⚠️</div>
+        <div style="font-weight:600;">Failed to load products</div>
+        <div style="font-size:0.85rem;">Check your connection and try again</div>
+      </div>`;
+  });
 
- filtered=products;
- buildCompany();
- render(true);
-})
-.catch(()=>document.getElementById("list").innerHTML="Failed to load");
-
-// COMPANY
-function buildCompany(){
- let set=[...new Set(products.map(p=>p.company))];
- let sel=document.getElementById("companyFilter");
- set.forEach(c=>{
-  let o=document.createElement("option");
-  o.value=c;o.textContent=c;
-  sel.appendChild(o);
- });
+// COMPANY DROPDOWN
+function buildCompany() {
+  let companies = [...new Set(products.map(p => p.company))].sort();
+  let sel = document.getElementById('companyFilter');
+  companies.forEach(c => {
+    let o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    sel.appendChild(o);
+  });
 }
 
 // FILTER
-function filterItems(){
- let s=document.getElementById("search").value.toLowerCase();
- let c=document.getElementById("companyFilter").value;
+function filterItems() {
+  let s = document.getElementById('search').value.toLowerCase();
+  let c = document.getElementById('companyFilter').value;
 
- filtered=products.filter(p=>
-  (!c||p.company===c)&&
-  (!s||p.name.toLowerCase().includes(s)||p.company.toLowerCase().includes(s))
- );
+  filtered = products.filter(p =>
+    (!c || p.company === c) &&
+    (!s || p.name.toLowerCase().includes(s) || p.company.toLowerCase().includes(s))
+  );
 
- visible=10;
- render(true);
+  visible = 12;
+  render(true);
 }
 
 // RENDER
-function render(reset=false){
- let list=document.getElementById("list");
- let data=filtered.slice(0,visible);
+function render(reset = false) {
+  let list = document.getElementById('list');
 
- if(reset) list.innerHTML="";
+  if (reset) {
+    list.innerHTML = '';
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="empty-state"><div style="font-size:2.5rem">🔍</div><div style="font-weight:600;">No products found</div></div>`;
+      return;
+    }
+  }
 
- data.forEach(p=>{
-  if(document.getElementById("card-"+p.id)) return;
+  let data = filtered.slice(0, visible);
+  data.forEach(p => {
+    if (document.getElementById('card-' + p.id)) return;
 
-  let qty=cart[p.id]||0;
+    let qty = cart[p.id] || 0;
+    let d = document.createElement('div');
+    d.className = 'item';
+    d.id = 'card-' + p.id;
 
-  let d=document.createElement("div");
-  d.className="item";
-  d.id="card-"+p.id;
+    d.innerHTML = `
+      <div class="item-name">${p.name}</div>
+      <div class="item-company">${p.company}</div>
+      <div class="item-meta">
+        <span class="meta-pill">📦 ${p.pack}</span>
+      </div>
+      <div class="price-row">
+        <span class="rate-price">₹${p.rate.toFixed(2)}</span>
+        <span class="mrp-price">MRP ₹${p.mrp.toFixed(2)}</span>
+      </div>
+      <div class="spacer"></div>
+      <div class="controls">${controls(p.id, qty)}</div>
+    `;
 
-  d.innerHTML=`
-  <b>${p.name}</b><br>
-  <small>${p.company}</small><br>
-  Pack: ${p.pack}<br>
-  MRP ₹${p.mrp}<br>
-  Rate ₹${p.rate}
-  <div class="controls">${controls(p.id,qty)}</div>
-  `;
-
-  list.appendChild(d);
- });
+    list.appendChild(d);
+  });
 }
 
 // CONTROLS
-function controls(id,qty){
- if(qty==0) return `<button onclick="update(${id},1)">Add</button>`;
- return `
- <button onclick="update(${id},-1)">-</button>
- <span class="qty">${qty}</span>
- <button onclick="update(${id},1)">+</button>`;
-}
-
-// CART
-function update(id,chg){
- cart[id]=(cart[id]||0)+chg;
- if(cart[id]<0) cart[id]=0;
-
- document.querySelector(`#card-${id} .controls`).innerHTML=controls(id,cart[id]);
- updateCart();
-}
-
-function updateCart(){
- let t=0,i=0;
- for(let id in cart){
-  if(cart[id]>0){
-   t+=cart[id]*products[id].rate;
-   i+=cart[id];
+function controls(id, qty) {
+  if (qty === 0) {
+    return `<button class="btn-add" onclick="update(${id},1)">+ Add to Cart</button>`;
   }
- }
- document.getElementById("cartInfo").innerText=`${i} items | ₹${t}`;
+  return `
+    <div class="qty-control">
+      <button class="btn-qty" onclick="update(${id},-1)">−</button>
+      <span class="qty-num">${qty}</span>
+      <button class="btn-qty" onclick="update(${id},1)">+</button>
+    </div>`;
+}
+
+// CART UPDATE
+function update(id, chg) {
+  cart[id] = (cart[id] || 0) + chg;
+  if (cart[id] < 0) cart[id] = 0;
+
+  let card = document.getElementById('card-' + id);
+  if (card) card.querySelector('.controls').innerHTML = controls(id, cart[id]);
+  updateCart();
+}
+
+function updateCart() {
+  let total = 0, itemCount = 0;
+  for (let id in cart) {
+    if (cart[id] > 0) {
+      total += cart[id] * products[id].rate;
+      itemCount += cart[id];
+    }
+  }
+  document.getElementById('cartCount').textContent = `${itemCount} item${itemCount !== 1 ? 's' : ''} in cart`;
+  document.getElementById('cartTotal').textContent = `₹${total.toFixed(2)}`;
 }
 
 // INFINITE SCROLL
-const obs=new IntersectionObserver(e=>{
- if(e[0].isIntersecting){
-  visible+=step;
-  render(false);
- }
-},{rootMargin:"200px"});
-
-obs.observe(document.getElementById("load-more-trigger"));
-
-// WHATSAPP
-function sendOrder(){
- let shop=document.getElementById("shop").value;
- let mob=document.getElementById("mobile").value;
-
- if(!shop||!mob){alert("Enter details");return;}
-
- let msg=`🧾 Order%0A${shop}%0A${mob}%0A%0A`;
- let total=0;
-
- for(let id in cart){
-  if(cart[id]>0){
-   let p=products[id];
-   let amt=cart[id]*p.rate;
-   total+=amt;
-   msg+=`${p.name} x ${cart[id]} = ₹${amt}%0A`;
+const obs = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting) {
+    visible += step;
+    render(false);
   }
- }
+}, { rootMargin: '250px' });
 
- msg+=`Total ₹${total}`;
- window.open("https://wa.me/919533762508?text="+msg);
+obs.observe(document.getElementById('load-more-trigger'));
+
+// WHATSAPP CHECKOUT
+function sendOrder() {
+  let shop = document.getElementById('shop').value.trim();
+  let mob  = document.getElementById('mobile').value.trim();
+
+  if (!shop || !mob) {
+    alert('⚠️ Please enter Shop Name and Mobile Number before checking out.');
+    return;
+  }
+
+  let hasItems = Object.values(cart).some(v => v > 0);
+  if (!hasItems) {
+    alert('🛒 Your cart is empty. Add some products first!');
+    return;
+  }
+
+  let msg = `🧾 *New Order*%0A*Shop:* ${encodeURIComponent(shop)}%0A*Mobile:* ${encodeURIComponent(mob)}%0A%0A`;
+  let total = 0;
+
+  for (let id in cart) {
+    if (cart[id] > 0) {
+      let p = products[id];
+      let amt = cart[id] * p.rate;
+      total += amt;
+      msg += `▪ ${encodeURIComponent(p.name)} × ${cart[id]} = ₹${amt.toFixed(2)}%0A`;
+    }
+  }
+
+  msg += `%0A*Total: ₹${total.toFixed(2)}*`;
+  window.open("https://wa.me/919533762508?text=" + msg);
 }
-
-</script></body>
+</script>
+</body>
 </html>
