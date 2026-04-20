@@ -3,39 +3,73 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aaradhya Pharmaceuticals</title><style>
-body {margin:0;font-family:Arial;background:#f5f5f5;}
-.header{padding:12px;background:#0a3d6b;color:white;position:sticky;top:0;z-index:10}
+body{margin:0;font-family:Arial;background:#f5f5f5;}
+.header{padding:12px;background:#0a3d6b;color:#fff;position:sticky;top:0;z-index:10}
 input,button,select{width:100%;padding:10px;margin:5px 0;border-radius:8px;border:1px solid #ccc}
-.item{background:white;margin:10px;padding:12px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.item{background:#fff;margin:10px;padding:12px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
 .controls{display:flex;justify-content:space-between;margin-top:8px}
 .qty{font-weight:bold}
-.cart-bar{position:fixed;bottom:0;width:100%;background:#28a745;color:white;padding:12px;display:flex;justify-content:space-between}
+.cart-bar{position:fixed;bottom:0;width:100%;background:#28a745;color:#fff;padding:12px;display:flex;justify-content:space-between}
+.theme-btn{margin-top:5px;background:#fff;color:#000;font-weight:bold}
 </style></head><body><div class="header">
-<h3 id="brandIcon">💊 Aaradhya Pharmaceuticals</h3><input id="shop" placeholder="Shop Name">
+<h3 id="brandIcon">💊 Aaradhya Pharmaceuticals</h3><button class="theme-btn" onclick="openThemeSheet()">🎨 Change Theme</button>
+
+<input id="shop" placeholder="Shop Name">
 <input id="mobile" placeholder="Mobile"><input id="search" placeholder="Search..." oninput="filterItems()"><select id="companyFilter" onchange="filterItems()">
 <option value="">All Companies</option>
 </select>
 </div><div id="list">Loading...</div>
-<div id="load-more-trigger"></div><div class="cart-bar">
+<div id="load-more-trigger"></div><div class="cart-bar" id="cartBar">
 <div id="cartInfo">0 items | ₹0</div>
 <button onclick="sendOrder()">Checkout</button>
+</div><!-- THEME PANEL --><div id="themeSheet" style="position:fixed;bottom:0;width:100%;background:#fff;padding:10px;display:none">
+<button onclick="applyTheme('pharma')">Pharma</button>
+<button onclick="applyTheme('darknight')">Dark</button>
+<button onclick="applyTheme('jungle')">Jungle</button>
+<button onclick="applyTheme('avengers')">Avengers</button>
+<button onclick="applyTheme('indian')">Indian</button>
+<button onclick="closeThemeSheet()">Close</button>
 </div><script>
 
-// 🔥 THEME (simple working version)
-const THEMES={pharma:"💊",darknight:"🦇",jungle:"🌿",avengers:"⚡"};
-function applyTheme(t){
- document.documentElement.setAttribute("data-theme",t);
- document.getElementById("brandIcon").innerText=THEMES[t]+" Aaradhya Pharmaceuticals";
-}
-applyTheme("pharma");
+// ── THEME SYSTEM ──
+const THEMES={
+ pharma:{icon:'💊',name:'Pharma',search:'Search medicines…'},
+ darknight:{icon:'🦇',name:'Dark',search:'Search…'},
+ jungle:{icon:'🌿',name:'Jungle',search:'Search…'},
+ avengers:{icon:'⚡',name:'Avengers',search:'Search…'},
+ indian:{icon:'🇮🇳',name:'Indian',search:'Search…'}
+};
 
-// 🔥 DATA
+let currentTheme=localStorage.getItem('aa_theme')||'pharma';
+
+function applyTheme(t){
+ currentTheme=t;
+ localStorage.setItem('aa_theme',t);
+ document.documentElement.setAttribute('data-theme',t);
+
+ document.getElementById("brandIcon").innerText=THEMES[t].icon+" Aaradhya Pharmaceuticals";
+ document.getElementById("search").placeholder=THEMES[t].search;
+
+ closeThemeSheet();
+}
+
+function openThemeSheet(){
+ document.getElementById("themeSheet").style.display="block";
+}
+function closeThemeSheet(){
+ document.getElementById("themeSheet").style.display="none";
+}
+
+applyTheme(currentTheme);
+
+
+// ── DATA ──
 let products=[],filtered=[],cart={};
 let visible=10,step=10;
 
 const CSV="https://docs.google.com/spreadsheets/d/1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9/export?format=csv";
 
-// SAFE CSV PARSER
+// CSV PARSER
 function parseCSV(text){
  let rows=[],row=[],col="",q=false;
  for(let c of text){
@@ -70,7 +104,7 @@ fetch(CSV)
 })
 .catch(()=>document.getElementById("list").innerHTML="Failed to load");
 
-// COMPANY FILTER
+// COMPANY
 function buildCompany(){
  let set=[...new Set(products.map(p=>p.company))];
  let sel=document.getElementById("companyFilter");
@@ -170,7 +204,7 @@ function sendOrder(){
 
  if(!shop||!mob){alert("Enter details");return;}
 
- let msg=`Order%0A${shop}%0A${mob}%0A%0A`;
+ let msg=`🧾 Order%0A${shop}%0A${mob}%0A%0A`;
  let total=0;
 
  for(let id in cart){
