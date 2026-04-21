@@ -7,10 +7,15 @@ body{margin:0;font-family:Arial;background:#f5f5f5}
 
 /* 🔔 TOP STRIP */
 .top-strip{
-  position:sticky;top:0;z-index:999;
-  background:#ffcc00;color:#000;
-  font-weight:bold;font-size:13px;
-  padding:6px 0;overflow:hidden;
+  position:sticky;
+  top:0;
+  z-index:999;
+  background:#ffcc00;
+  color:#000;
+  font-weight:bold;
+  font-size:13px;
+  padding:6px 0;
+  overflow:hidden;
 }
 .top-strip span{
   display:inline-block;
@@ -24,14 +29,56 @@ body{margin:0;font-family:Arial;background:#f5f5f5}
 }
 
 /* HEADER */
-.header{padding:12px;background:#0a3d6b;color:#fff;position:sticky;top:32px;z-index:10}
-input,button,select{width:100%;padding:10px;margin:5px 0;border-radius:8px;border:1px solid #ccc}
-.item{background:#fff;margin:10px;padding:12px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
-.controls{display:flex;justify-content:space-between;margin-top:8px}
+.header{
+  padding:12px;
+  background:#0a3d6b;
+  color:#fff;
+  position:sticky;
+  top:32px;
+  z-index:10
+}
+
+input,button,select{
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:8px;
+  border:1px solid #ccc
+}
+
+.item{
+  background:#fff;
+  margin:10px;
+  padding:12px;
+  border-radius:10px;
+  box-shadow:0 2px 5px rgba(0,0,0,0.1)
+}
+
+.controls{
+  display:flex;
+  justify-content:space-between;
+  margin-top:8px
+}
+
 .qty{font-weight:bold}
-.cart-bar{position:fixed;bottom:0;width:100%;background:#28a745;color:#fff;padding:12px;display:flex;justify-content:space-between}
-.theme-btn{background:#fff;color:#000;font-weight:bold}
-</style></head><body><!-- 🔔 TOP ANNOUNCEMENT --><div class="top-strip">
+
+.cart-bar{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:#28a745;
+  color:#fff;
+  padding:12px;
+  display:flex;
+  justify-content:space-between
+}
+
+.theme-btn{
+  background:#fff;
+  color:#000;
+  font-weight:bold;
+}
+</style></head><body><!-- 🔔 ANNOUNCEMENT STRIP --><div class="top-strip">
   <span id="topText">Loading updates...</span>
 </div><div class="header">
 <h3 id="brandIcon">💊 Aaradhya Pharmaceuticals</h3><button class="theme-btn" onclick="openThemeSheet()">🎨 Theme</button>
@@ -77,6 +124,7 @@ function openThemeSheet(){document.getElementById("themeSheet").style.display="b
 function closeThemeSheet(){document.getElementById("themeSheet").style.display="none";}
 applyTheme(currentTheme);
 
+
 // ── DATA ──
 let products=[],filtered=[],cart={};
 let visible=10,step=10;
@@ -103,9 +151,10 @@ fetch(CSV)
 .then(txt=>{
  let rows=parseCSV(txt);
 
- // 🔔 ANNOUNCEMENT (COLUMN G)
+ // 🔔 FETCH ANNOUNCEMENT (COLUMN G)
  if(rows[1] && rows[1][6]){
-  document.getElementById("topText").innerText=rows[1][6];
+  document.getElementById("topText").innerText=
+    rows[1][6] || "Welcome to Aaradhya Pharmaceuticals";
  }
 
  products=rows.slice(1).map((r,i)=>({
@@ -121,7 +170,10 @@ fetch(CSV)
  buildCompany();
  render(true);
 })
-.catch(()=>document.getElementById("list").innerHTML="Failed to load");
+.catch(()=>{
+ document.getElementById("list").innerHTML="Failed to load";
+ document.getElementById("topText").innerText="Welcome to Aaradhya Pharmaceuticals";
+});
 
 // COMPANY FILTER
 function buildCompany(){
