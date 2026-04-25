@@ -279,7 +279,7 @@ function parseCSV(text) {
 var products=[], filtered=[], cart={}, visible=12;
 var COL = { name:0, pack:1, mrp:3, rate:4, company:5, composition:6 }; // default guess
 
-var CSV_URL = 'https://docs.google.com/spreadsheets/d/1OlY-BMsluyLrGD1lpv9dKa2rRKFhl1Q9/export?format=csv';
+var CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSkoAFrWFkerY629v3zhsV5q3NggnlHgSgBqZ2CnAK3n0riqW24dZN3iWm_JJz-XPf9Dtgkayaey-Vg/pub?output=csv';
 
 fetch(CSV_URL)
   .then(function(r){ return r.text(); })
